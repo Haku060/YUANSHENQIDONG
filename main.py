@@ -11,10 +11,8 @@ import win32gui
 file_path = r'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\原神\原神.lnk'
 # 创建快捷方式对象
 shell = win32com.client.Dispatch("WScript.Shell")
-shortcut = shell.CreateShortCut(file_path)
 # 获取真实目录
-target_path = shortcut.TargetPath.replace('launcher.exe', '')
-target_dir = os.path.join(target_path, 'Genshin Impact Game', 'YuanShen.exe')
+target_dir = os.path.join(shell.CreateShortCut(file_path).TargetPath.replace('launcher.exe', ''), 'Genshin Impact Game', 'YuanShen.exe')
 print("原神目录", target_dir)
 # 获取屏幕分辨率
 screen_width, screen_height = pyautogui.size()
@@ -22,18 +20,19 @@ total_pixel = screen_height * screen_width
 print("屏幕分辨率为", screen_height, "*", screen_width)
 pyautogui.FAILSAFE = False
 # 获取原神启动情况
-process = len(os.popen('tasklist | findstr YuanShen.exe').readlines())
-if process >= 1:
+if len(os.popen('tasklist | findstr YuanShen.exe').readlines()) >= 1:
     print("原神已经启动")
 else:
     while True:
         # 读取屏幕
         screenshot = cv2.cvtColor(np.array(ImageGrab.grab()), cv2.COLOR_RGB2BGR)
-        number_of_white_pix = np.count_nonzero(screenshot == [255,255,255])
+        number_of_white_pix = np.sum(np.all(screenshot >= 245, axis=2))
+        # 计算含原量
         yuan_content = number_of_white_pix / total_pixel * 100
-        print(yuan_content)
-        # print("原神含量", yuan_content, "%")
-        if yuan_content >= 200:
+        print("原神含量", yuan_content, "%")
+        if yuan_content >= 85:
+            # 原神 启动！
+            print("原神，启动！")
             white_image = np.ones(screenshot.shape, dtype=np.uint8) * 255
             subprocess.Popen(target_dir)
             cv2.namedWindow('window', cv2.WND_PROP_FULLSCREEN)
